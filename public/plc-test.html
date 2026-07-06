@@ -3,26 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>设备手动监控</title>
+<title>设备监控</title>
 <script src="/appearance.js"></script>
 <link rel="stylesheet" href="/appearance.css">
 <style>
   :root{
     --bg:#f3f5f7;
     --panel:#fff;
-    --panel-2:#f7f8fa;
     --border:#dde1e6;
-    --border-strong:#c8ced6;
     --text:#1a1d22;
     --muted:#6b7280;
     --accent:#1d8cc7;
-    --accent-soft:#e6f2f9;
-    --good:#1e9e4b;
-    --good-soft:#e6f7ed;
-    --bad:#d92d3a;
-    --bad-soft:#fde8ea;
-    --warn:#c77d1a;
-    --warn-soft:#fef3e0;
     --shadow:0 1px 4px rgba(0,0,0,.06);
   }
 
@@ -30,803 +21,82 @@
 
   body{
     margin:0;
-    background:#f3f5f7;
+    min-height:100vh;
+    background:var(--bg);
     color:var(--text);
     font-family:"Segoe UI","Noto Sans SC","Microsoft YaHei",sans-serif;
-    font-size:12px;
-    line-height:1.3;
   }
 
   .page{
-    width:min(1560px, calc(100vw - 12px));
+    width:min(960px, calc(100vw - 24px));
     margin:0 auto;
-    padding:3px 0;
+    padding:18px 0;
     display:grid;
-    gap:4px;
+    gap:12px;
   }
 
   .panel{
     background:var(--panel);
     border:1px solid var(--border);
-    border-radius:8px;
+    border-radius:14px;
     box-shadow:var(--shadow);
-    min-width:0;
   }
 
-  /* ---- header ---- */
   .header{
-    padding:5px 12px;
+    padding:18px 20px 14px;
+  }
+
+  .title-links{
     display:flex;
-    align-items:center;
-    justify-content:space-between;
     gap:10px;
     flex-wrap:wrap;
+    margin-top:8px;
   }
 
-  .title h1{
-    margin:0;
-    font-size:15px;
-    font-weight:700;
-  }
-
-  .title p{ margin:1px 0 0; font-size:10px; color:var(--muted); }
-
-  .title-links{ display:flex; gap:8px; flex-wrap:wrap; margin-top:3px; }
-  .title-link{ color:var(--muted); text-decoration:none; font-size:10px; transition:color .12s ease; }
-  .title-link:hover{ color:var(--accent); }
-  .title-link.active{ color:var(--accent); font-weight:600; pointer-events:none; }
-
-  /* ---- summary ---- */
-  .summary{
-    padding:5px 12px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
-    flex-wrap:wrap;
-  }
-
-  .summary-main{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-
-  .status-chip{
-    height:26px;
-    padding:0 10px;
-    border-radius:999px;
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    border:1px solid var(--border-strong);
-    background:var(--panel-2);
-    font-size:11px;
-    font-weight:600;
-    white-space:nowrap;
-  }
-
-  .status-chip .dot{ width:7px; height:7px; border-radius:50%; }
-
-  .status-chip.online{
-    border-color:#7ed89b;
-    color:var(--good);
-    background:var(--good-soft);
-  }
-  .status-chip.online .dot{ background:var(--good); }
-
-  .status-chip.offline{
-    border-color:#f0a3a9;
-    color:var(--bad);
-    background:var(--bad-soft);
-  }
-  .status-chip.offline .dot{ background:var(--bad); }
-
-  .pill{
-    padding:3px 8px;
-    border-radius:6px;
-    border:1px solid var(--border);
-    background:var(--panel-2);
-    font-size:10px;
+  .title-link{
     color:var(--muted);
-    white-space:nowrap;
+    text-decoration:none;
+    font-size:12px;
   }
 
-  .pill strong{ color:var(--text); font-weight:600; margin-left:2px; }
-  #error-pill{ white-space:normal; max-width:min(100%, 460px); }
-
-  .summary-actions{ display:flex; gap:5px; flex-wrap:wrap; }
-
-  .btn{
-    height:28px;
-    padding:0 10px;
-    border-radius:7px;
-    border:1px solid transparent;
-    font-size:11px;
-    font-weight:600;
-    cursor:pointer;
-    transition:all .12s ease;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    gap:4px;
-    white-space:nowrap;
+  .title-link:hover,
+  .title-link.active{
+    color:var(--accent);
   }
 
-  .btn:hover{ filter:brightness(1.06); }
-  .btn:disabled{ opacity:.4; cursor:not-allowed; filter:none; }
-
-  .btn-primary{ color:#fff; background:var(--accent); border-color:var(--accent); }
-  .btn-warn{ color:#a0620d; background:var(--warn-soft); border-color:#e8c482; }
-  .btn-on{ color:var(--good); background:var(--good-soft); border-color:#9edbb5; }
-  .btn-off{ color:var(--muted); background:var(--panel-2); border-color:var(--border-strong); }
-
-  /* ---- sections ---- */
-  .section{
-    padding:5px 12px 7px;
-    display:grid;
-    gap:5px;
+  .notice{
+    padding:28px 20px;
   }
 
-  .section-head{ display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; }
-  .section-head h2{ margin:0; font-size:12px; font-weight:700; color:var(--accent); }
-  .section-meta{ font-size:10px; color:var(--muted); }
-
-  /* ---- point grids ---- */
-  .point-grid{ display:grid; gap:3px; }
-  #controls-grid{ grid-template-columns:repeat(4, 1fr); }
-  #alarms-grid{ grid-template-columns:repeat(5, 1fr); }
-  #inputs-grid{ grid-template-columns:repeat(5, 1fr); }
-
-  .point-card{
-    padding:4px 8px;
-    border-radius:7px;
-    border:1px solid var(--border);
-    background:var(--panel-2);
-    display:flex;
-    align-items:center;
-    gap:6px;
-    flex-wrap:wrap;
-    min-height:34px;
+  .notice h2{
+    margin:0 0 8px;
+    font-size:20px;
   }
 
-  .point-card.active{ border-color:#9edbb5; background:#f4fbf6; }
-  .point-card.alarm{ border-color:#f0a3a9; background:#fef6f7; }
-
-  .point-top{ display:contents; }
-  .point-label{ font-size:12px; font-weight:700; white-space:nowrap; }
-  .point-addr{ font-size:9px; color:var(--muted); white-space:nowrap; }
-  .point-desc{ font-size:10px; color:var(--muted); white-space:nowrap; }
-
-  .point-state{
-    padding:1px 7px;
-    border-radius:4px;
-    font-size:10px;
-    font-weight:700;
-    white-space:nowrap;
-    line-height:1.4;
-  }
-
-  .point-state.on,.point-state.safe{ color:var(--good); background:var(--good-soft); }
-  .point-state.off{ color:var(--muted); background:#edf0f3; }
-  .point-state.alarm{ color:var(--bad); background:var(--bad-soft); }
-
-  .point-hint{ font-size:9px; color:var(--muted); white-space:nowrap; }
-  .point-actions{ display:flex; gap:3px; margin-left:auto; }
-  .point-actions .btn{ height:24px; padding:0 7px; font-size:10px; border-radius:5px; }
-
-  /* ---- log ---- */
-  .log-list{ display:grid; gap:2px; max-height:72px; overflow-y:auto; }
-  .log-item{
-    padding:2px 6px;
-    border-radius:4px;
-    border:1px solid var(--border);
-    background:var(--panel-2);
-    display:flex;
-    gap:6px;
-    font-size:10px;
-    line-height:1.3;
-    white-space:nowrap;
-    overflow:hidden;
-  }
-
-  .log-time{ color:var(--muted); font-family:Consolas,monospace; flex-shrink:0; font-size:9px; }
-  .log-msg{ overflow:hidden; text-overflow:ellipsis; }
-  .log-msg.info{ color:var(--accent); }
-  .log-msg.ok{ color:var(--good); }
-  .log-msg.warn{ color:var(--warn); }
-  .log-msg.err{ color:var(--bad); }
-
-  @media (max-width: 1080px){
-    .summary{ flex-direction:column; align-items:flex-start; }
-    #controls-grid{ grid-template-columns:repeat(2, 1fr); }
-    #alarms-grid{ grid-template-columns:repeat(3, 1fr); }
-    #inputs-grid{ grid-template-columns:repeat(3, 1fr); }
+  .notice p{
+    margin:0;
+    color:var(--muted);
+    line-height:1.7;
   }
 </style>
 </head>
 <body>
   <div class="page">
-    <section class="panel header">
-      <div class="title">
-        <h1>设备手动监控</h1>
-        <div class="title-links">
-          <a class="title-link" href="/index.html">泄漏测试</a>
-          <a class="title-link" href="/query.html">数据查询</a>
-          <a class="title-link" href="/settings.html">系统设置</a>
-          <a class="title-link" href="/comm-config.html">通讯配置</a>
-          <a class="title-link active" href="/plc-test.html">设备监控</a>
-        </div>
+    <header class="panel header">
+      <h1>设备监控</h1>
+      <div class="title-links">
+        <a class="title-link" href="/index.html">泄漏测试</a>
+        <a class="title-link" href="/query.html">数据查询</a>
+        <a class="title-link" href="/settings.html">系统设置</a>
+        <a class="title-link" href="/comm-config.html">通讯配置</a>
+        <a class="title-link active" href="/plc-test.html">设备监控</a>
       </div>
-    </section>
+    </header>
 
-    <section class="panel summary">
-      <div class="summary-main">
-        <div class="status-chip offline" id="plc-online-chip">
-          <span class="dot"></span>
-          <span id="plc-online-text">PLC OFFLINE</span>
-        </div>
-        <div class="status-chip offline" id="coord-chip">
-          <span class="dot"></span>
-          <span id="coord-text">协调器未运行</span>
-        </div>
-        <div class="pill">地址<strong id="endpoint-text">-</strong></div>
-        <div class="pill">轮询<strong id="poll-text">500 ms</strong></div>
-        <div class="pill">刷新<strong id="last-poll-text">--</strong></div>
-        <div class="pill">启用<strong id="enabled-text">未启用</strong></div>
-        <div class="pill" id="error-pill">错误<strong id="last-error-text">无</strong></div>
-      </div>
-      <div class="summary-actions">
-        <button class="btn btn-primary" id="btn-refresh" type="button">立即刷新</button>
-        <button class="btn btn-warn" id="btn-reset-manual" type="button">全部关闭</button>
-      </div>
-    </section>
-
-    <section class="panel section">
-      <div class="section-head">
-        <div>
-          <h2>手动控制</h2>
-          <div class="section-meta">M0 启动许可状态 · M10 手动模式 · M11 移载气缸 · M12 下压气缸</div>
-        </div>
-      </div>
-      <div class="point-grid" id="controls-grid"></div>
-    </section>
-
-    <section class="panel section">
-      <div class="section-head">
-        <div>
-          <h2>报警状态</h2>
-          <div class="section-meta">只读监控，红色表示报警激活</div>
-        </div>
-      </div>
-      <div class="point-grid" id="alarms-grid"></div>
-    </section>
-
-    <section class="panel section">
-      <div class="section-head">
-        <div>
-          <h2>输入信号</h2>
-          <div class="section-meta">X 输入离散信号，按现场实时刷新</div>
-        </div>
-      </div>
-      <div class="point-grid" id="inputs-grid"></div>
-    </section>
-
-    <section class="panel section">
-      <div class="section-head">
-        <div>
-          <h2>操作日志</h2>
-          <div class="section-meta">最近 4 条记录</div>
-        </div>
-      </div>
-      <div class="log-list" id="log-list"></div>
+    <section class="panel notice">
+      <h2>当前项目未启用设备监控模块</h2>
+      <p>这个项目只保留 ATEQ 仪器和扫码枪功能，PLC 相关页面与控制项已隐藏。</p>
     </section>
   </div>
-
-<script>
-  const POLL_MS = 500;
-  const TOLERANCE_MAX_FAILS = 3;
-  const TOLERANCE_STALE_MS = 8000;
-  const SETTINGS_SYNC_KEY = "ateq-settings-updated";
-  const SETTINGS_SYNC_CHANNEL = "ateq-settings-updated-channel";
-  const settingsSyncChannel = typeof BroadcastChannel === "function"
-    ? new BroadcastChannel(SETTINGS_SYNC_CHANNEL)
-    : null;
-  const state = {
-    config: null,
-    monitor: null,
-    pollTimer: null,
-    pollBusy: false,
-    actionBusy: false,
-    manualApiAvailable: true,
-    compatibilityNoticeShown: false,
-    previousPointValues: {},
-    consecutiveFails: 0,
-    lastSuccess: 0,
-    lastSettingsSyncAt: ""
-  };
-
-  async function api(url, options) {
-    const response = await fetch(url, options);
-    const text = await response.text();
-    let payload = {};
-
-    if (text) {
-      try {
-        payload = JSON.parse(text);
-      } catch {
-        payload = {
-          message: text.replace(/<[^>]+>/g, " ").trim() || response.statusText || "Request failed"
-        };
-      }
-    }
-
-    if (!response.ok) {
-      const error = new Error(payload.message || payload.errorDetail || response.statusText || "Request failed");
-      error.status = response.status;
-      error.payload = payload;
-      throw error;
-    }
-
-    return payload;
-  }
-
-  function nowText() {
-    const now = new Date();
-    return now.toTimeString().slice(0, 8) + "." + String(now.getMilliseconds()).padStart(3, "0");
-  }
-
-  function log(message, level) {
-    const row = document.createElement("div");
-    row.className = "log-item";
-    row.innerHTML = '<span class="log-time">' + nowText() + '</span><span class="log-msg ' + (level || "info") + '"></span>';
-    row.querySelector(".log-msg").textContent = message;
-    const list = document.getElementById("log-list");
-    list.prepend(row);
-    while (list.children.length > 4) {
-      list.removeChild(list.lastChild);
-    }
-  }
-
-  function setChip(id, textId, online, onlineText, offlineText) {
-    const chip = document.getElementById(id);
-    const text = document.getElementById(textId);
-    chip.className = "status-chip " + (online ? "online" : "offline");
-    text.textContent = online ? onlineText : offlineText;
-  }
-
-  function formatTime(value) {
-    if (!value) return "--";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString("zh-CN", { hour12: false });
-  }
-
-  function buildConnection(config, monitor) {
-    const connection = monitor && monitor.connection ? monitor.connection : {};
-    return {
-      host: connection.host || (config && config.host) || "-",
-      port: connection.port || (config && config.port) || "-",
-      unitId: connection.unitId ?? (config ? config.unitId : "-") ?? "-"
-    };
-  }
-
-  function buildCompatibilityMessage(detail) {
-    const base = "当前服务还没有加载手动监控接口，请重启 C# 服务后再使用本页。";
-    return detail ? base + " " + detail : base;
-  }
-
-  async function loadLegacyMonitor() {
-    let statusData = null;
-
-    try {
-      const response = await api("/api/plc/status");
-      statusData = response.data || null;
-    } catch {
-      statusData = null;
-    }
-
-    const config = state.config || {};
-    const connection = buildConnection(config, null);
-    const detail = statusData && statusData.lastError
-      ? "当前 PLC 状态：" + statusData.lastError
-      : "页面已更新，但后台仍是旧版本。";
-
-    state.monitor = {
-      online: statusData ? !!statusData.online : false,
-      coordinatorRunning: statusData ? !!statusData.coordinatorRunning : false,
-      enabled: statusData ? !!statusData.enabled : !!config.enabled,
-      lastError: buildCompatibilityMessage(detail),
-      lastPollAt: statusData ? statusData.lastPollAt : null,
-      connection: connection,
-      panel: {
-        controls: [],
-        alarms: [],
-        inputs: []
-      }
-    };
-
-    if (!state.compatibilityNoticeShown) {
-      log("当前 3000 服务还是旧版本，缺少 /api/plc/manual-monitor。重启 C# 服务后，本页才能监控和控制 M10/M11/M12。", "warn");
-      state.compatibilityNoticeShown = true;
-    }
-  }
-
-  function renderSummary() {
-    const monitor = state.monitor || {};
-    const connection = buildConnection(state.config || {}, monitor);
-    const endpoint = connection.host + ":" + connection.port + " / Unit " + connection.unitId;
-
-    setChip("plc-online-chip", "plc-online-text", !!monitor.online, "PLC ONLINE", "PLC OFFLINE");
-    setChip("coord-chip", "coord-text", !!monitor.coordinatorRunning, "协调器运行中", "协调器未运行");
-
-    document.getElementById("endpoint-text").textContent = endpoint;
-    document.getElementById("poll-text").textContent = POLL_MS + " ms";
-    document.getElementById("last-poll-text").textContent = formatTime(monitor.lastPollAt);
-    document.getElementById("enabled-text").textContent = monitor.enabled ? "已启用" : "未启用";
-    document.getElementById("last-error-text").textContent = monitor.lastError || "无";
-
-    const errorPill = document.getElementById("error-pill");
-    errorPill.style.borderColor = monitor.lastError ? "#f0a3a9" : "";
-    errorPill.style.color = monitor.lastError ? "var(--bad)" : "";
-
-    const actionsDisabled = !monitor.online || !monitor.enabled || !state.manualApiAvailable || state.actionBusy;
-    document.getElementById("btn-refresh").disabled = state.pollBusy || state.actionBusy;
-    document.getElementById("btn-reset-manual").disabled = actionsDisabled;
-    document.getElementById("btn-reset-manual").title = state.manualApiAvailable ? "" : "当前服务版本过旧，请先重启 C# 服务";
-    syncControlButtonState(actionsDisabled);
-  }
-
-  function syncControlButtonState(disabled) {
-    document.querySelectorAll(".point-actions .btn").forEach(function (button) {
-      button.disabled = disabled;
-    });
-  }
-
-  function cardStateClass(group, point) {
-    if (group === "alarm") return point.value ? "point-state alarm" : "point-state safe";
-    return point.value ? "point-state on" : "point-state off";
-  }
-
-  function cardActiveClass(group, point) {
-    if (group === "alarm" && point.value) return "point-card alarm";
-    return point.value ? "point-card active" : "point-card";
-  }
-
-  function buildPointCard(point, group) {
-    const card = document.createElement("div");
-    card.className = cardActiveClass(group, point);
-
-    const hint = group === "control"
-      ? "ON=" + point.onText + " / OFF=" + point.offText
-      : (point.value ? point.onText : point.offText);
-
-    card.innerHTML =
-      '<div class="point-top">' +
-        '<div class="point-label">' + point.label + '</div>' +
-        '<div class="point-addr">地址 ' + point.address + '</div>' +
-      '</div>' +
-      '<div class="point-desc">' + point.description + '</div>' +
-      '<div class="' + cardStateClass(group, point) + '">' + (point.value ? point.onText : point.offText) + '</div>' +
-      '<div class="point-hint">' + hint + '</div>';
-
-    if (group === "control" && point.writable) {
-      const actions = document.createElement("div");
-      actions.className = "point-actions";
-
-      const onButton = document.createElement("button");
-      onButton.className = "btn btn-on";
-      onButton.type = "button";
-      onButton.textContent = "置 ON";
-      onButton.disabled = !state.monitor || !state.monitor.online || !state.monitor.enabled || !state.manualApiAvailable || state.actionBusy;
-      onButton.addEventListener("click", function () {
-        writeCoil(point.label, true);
-      });
-
-      const offButton = document.createElement("button");
-      offButton.className = "btn btn-off";
-      offButton.type = "button";
-      offButton.textContent = "置 OFF";
-      offButton.disabled = !state.monitor || !state.monitor.online || !state.monitor.enabled || !state.manualApiAvailable || state.actionBusy;
-      offButton.addEventListener("click", function () {
-        writeCoil(point.label, false);
-      });
-
-      actions.appendChild(onButton);
-      actions.appendChild(offButton);
-      card.appendChild(actions);
-    }
-
-    return card;
-  }
-
-  function renderPoints(containerId, group, points) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = "";
-
-    if (!points || !points.length) {
-      const empty = document.createElement("div");
-      const emptyHint = state.manualApiAvailable
-        ? "请确认 PLC 已连接且页面轮询成功。"
-        : "当前服务版本过旧，请重启 C# 服务后再使用手动监控。";
-
-      empty.className = "point-card";
-      empty.innerHTML = '<div class="point-label">--</div><div class="point-desc">当前暂无数据</div><div class="point-hint">' + emptyHint + "</div>";
-      container.appendChild(empty);
-      return;
-    }
-
-    points.forEach(function (point) {
-      container.appendChild(buildPointCard(point, group));
-    });
-  }
-
-  function detectTransitions() {
-    if (!state.monitor || !state.monitor.panel) return;
-
-    const groups = [
-      { name: "控制", points: state.monitor.panel.controls || [] },
-      { name: "报警", points: state.monitor.panel.alarms || [] },
-      { name: "输入", points: state.monitor.panel.inputs || [] }
-    ];
-
-    groups.forEach(function (group) {
-      group.points.forEach(function (point) {
-        const previous = state.previousPointValues[point.label];
-        if (typeof previous === "boolean" && previous !== point.value) {
-          const valueText = point.value ? point.onText : point.offText;
-          const level = group.name === "报警" && point.value ? "err" : (group.name === "控制" ? "ok" : "warn");
-          log(group.name + " " + point.label + " -> " + valueText, level);
-        }
-        state.previousPointValues[point.label] = point.value;
-      });
-    });
-  }
-
-  function renderAll() {
-    renderSummary();
-    const panel = state.monitor && state.monitor.panel ? state.monitor.panel : {};
-    renderPoints("controls-grid", "control", panel.controls || []);
-    renderPoints("alarms-grid", "alarm", panel.alarms || []);
-    renderPoints("inputs-grid", "input", panel.inputs || []);
-  }
-
-  function applyLocalControlValue(label, value) {
-    const controls = state.monitor && state.monitor.panel ? state.monitor.panel.controls : null;
-    if (!Array.isArray(controls)) {
-      return;
-    }
-
-    const point = controls.find(function (item) {
-      return item.label === label;
-    });
-
-    if (!point) {
-      return;
-    }
-
-    point.value = value;
-    state.monitor.online = true;
-    state.monitor.lastError = "";
-    state.lastSuccess = Date.now();
-  }
-
-  async function loadConfig() {
-    const response = await api("/api/config/plc");
-    state.config = response.config || {};
-  }
-
-  async function pollManualMonitor(options) {
-    const silent = options && options.silent;
-    state.pollBusy = true;
-    renderSummary();
-
-    try {
-      const response = await api("/api/plc/manual-monitor");
-      state.manualApiAvailable = true;
-      state.monitor = response.data || null;
-      state.consecutiveFails = 0;
-      state.lastSuccess = Date.now();
-      detectTransitions();
-      renderAll();
-
-      if (!silent) {
-        if (response.data && response.data.stale) {
-          log("手动监控数据来自缓存 (上次成功 " + response.data.staleAgeMs + "ms 前)", "warn");
-        } else {
-          log("手动监控数据已刷新", "info");
-        }
-      }
-    } catch (error) {
-      if (error.status === 404) {
-        state.manualApiAvailable = false;
-        await loadLegacyMonitor();
-        renderAll();
-        state.pollBusy = false;
-        renderSummary();
-        return;
-      }
-
-      state.consecutiveFails++;
-      var staleness = Date.now() - state.lastSuccess;
-      var shouldFlipOffline = state.consecutiveFails >= TOLERANCE_MAX_FAILS
-        || (state.lastSuccess > 0 && staleness > TOLERANCE_STALE_MS);
-
-      if (shouldFlipOffline) {
-        log("刷新失败: " + error.message + " (连续失败 " + state.consecutiveFails + " 次，已离线)", "err");
-        if (!state.monitor) {
-          const config = state.config || {};
-          state.monitor = {
-            online: false,
-            coordinatorRunning: false,
-            enabled: !!config.enabled,
-            lastError: error.message,
-            lastPollAt: null,
-            connection: buildConnection(config, null),
-            panel: { controls: [], alarms: [], inputs: [] }
-          };
-        } else {
-          state.monitor.online = false;
-          state.monitor.lastError = error.message;
-        }
-      } else {
-        // Within tolerance: keep last data, note retrying
-        if (state.monitor) {
-          state.monitor.lastError = error.message;
-          if (!silent) {
-            log("刷新失败 (重试 " + state.consecutiveFails + "/" + TOLERANCE_MAX_FAILS + "): " + error.message, "warn");
-          }
-        }
-      }
-      renderAll();
-    } finally {
-      state.pollBusy = false;
-      renderSummary();
-    }
-  }
-
-  async function writeCoil(label, value) {
-    if (state.actionBusy) {
-      return;
-    }
-
-    state.actionBusy = true;
-    renderSummary();
-
-    try {
-      const response = await api("/api/plc/write-coil", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ label: label, value: value })
-      });
-      const actual = response && response.data ? response.data.actual === true : value;
-      applyLocalControlValue(label, actual);
-      renderAll();
-
-      if (actual === value) {
-        log(label + " 已写入 " + (value ? "ON" : "OFF"), "ok");
-      } else {
-        log(label + " 写入完成，但 PLC 当前返回 " + (actual ? "ON" : "OFF"), "warn");
-      }
-
-      await pollManualMonitor({ silent: true });
-    } catch (error) {
-      if (error.status === 404) {
-        state.manualApiAvailable = false;
-        await loadLegacyMonitor();
-        log(label + " 写入失败: 当前服务版本过旧，请先重启 C# 服务。", "err");
-      } else {
-        log(label + " 写入失败: " + error.message, "err");
-      }
-    } finally {
-      state.actionBusy = false;
-      renderSummary();
-    }
-  }
-
-  async function resetManualOutputs() {
-    if (state.actionBusy) {
-      return;
-    }
-
-    state.actionBusy = true;
-    renderSummary();
-
-    try {
-      await api("/api/plc/manual-reset", { method: "POST" });
-      applyLocalControlValue("M10", false);
-      applyLocalControlValue("M11", false);
-      applyLocalControlValue("M12", false);
-      renderAll();
-      log("M10 / M11 / M12 已全部关闭", "warn");
-      await pollManualMonitor({ silent: true });
-    } catch (error) {
-      if (error.status === 404) {
-        state.manualApiAvailable = false;
-        await loadLegacyMonitor();
-        log("手动输出复位失败: 当前服务版本过旧，请先重启 C# 服务。", "err");
-      } else {
-        log("手动输出复位失败: " + error.message, "err");
-      }
-    } finally {
-      state.actionBusy = false;
-      renderSummary();
-    }
-  }
-
-  function startPolling() {
-    stopPolling();
-    state.pollTimer = window.setInterval(function () {
-      if (!state.pollBusy && !state.actionBusy) {
-        pollManualMonitor({ silent: true });
-      }
-    }, POLL_MS);
-  }
-
-  function stopPolling() {
-    if (state.pollTimer) {
-      clearInterval(state.pollTimer);
-      state.pollTimer = null;
-    }
-  }
-
-  document.getElementById("btn-refresh").addEventListener("click", function () {
-    pollManualMonitor({ silent: false });
-  });
-
-  document.getElementById("btn-reset-manual").addEventListener("click", function () {
-    resetManualOutputs();
-  });
-
-  async function handleSettingsSync(detail) {
-    if (!detail || detail.scope !== "products") {
-      return;
-    }
-
-    var syncAt = String(detail.at || "");
-    if (syncAt && state.lastSettingsSyncAt === syncAt) {
-      return;
-    }
-    state.lastSettingsSyncAt = syncAt;
-
-    await pollManualMonitor({ silent: true });
-    log("产品设置已同步，M0 状态已刷新", "info");
-  }
-
-  window.addEventListener("storage", function (event) {
-    if (event.key !== SETTINGS_SYNC_KEY) {
-      return;
-    }
-
-    var detail = null;
-    try {
-      detail = event.newValue ? JSON.parse(event.newValue) : null;
-    } catch {
-      detail = null;
-    }
-
-    handleSettingsSync(detail).catch(function (error) {
-      log("产品设置同步失败: " + error.message, "warn");
-    });
-  });
-
-  if (settingsSyncChannel) {
-    settingsSyncChannel.addEventListener("message", function (event) {
-      handleSettingsSync(event.data || null).catch(function (error) {
-        log("产品设置同步失败: " + error.message, "warn");
-      });
-    });
-  }
-
-  window.addEventListener("beforeunload", stopPolling);
-
-  (async function init() {
-    log("设备手动监控页面已加载，正在读取 PLC 配置...", "info");
-    try {
-      await loadConfig();
-      await pollManualMonitor({ silent: false });
-      startPolling();
-    } catch (error) {
-      log("初始化失败: " + error.message, "err");
-      renderAll();
-    }
-  })();
-</script>
 </body>
 </html>

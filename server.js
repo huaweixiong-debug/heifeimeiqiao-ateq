@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { body, query, validationResult } = require('express-validator');
+const { SerialPort } = require('serialport');
 
 const {
   initDatabase,
@@ -470,6 +471,31 @@ app.get('/api/scanner/debug', (request, response) => {
   });
 });
 
+app.get('/api/system/serial-ports', async (request, response, next) => {
+  try {
+    const ports = await SerialPort.list();
+    const normalizedPorts = ports
+      .map((port) => ({
+        path: port.path,
+        friendlyName: port.friendlyName || null,
+        manufacturer: port.manufacturer || null,
+        serialNumber: port.serialNumber || null,
+        pnpId: port.pnpId || null,
+        vendorId: port.vendorId || null,
+        productId: port.productId || null
+      }))
+      .sort((left, right) => String(left.path || '').localeCompare(String(right.path || '')));
+
+    response.json({
+      success: true,
+      ports: normalizedPorts,
+      detected: normalizedPorts.map((port) => port.path)
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/api/scanner/debug/line-signals', scannerLineSignalValidators, async (request, response, next) => {
   try {
     const errors = validationResult(request);
@@ -517,7 +543,7 @@ app.get('/api/status', async (request, response) => {
     response.json({
       connected: status.connected,
       enabled: status.enabled,
-      running: status.stepCode >= 4 && status.stepCode !== 65535,
+      running: status.stepCode >= 1 && status.stepCode !== 65535,
       currentJob: status.currentProgram,
       currentStep: status.stepCode,
       resultCode: status.resultCode,
@@ -538,7 +564,7 @@ app.get('/api/status', async (request, response) => {
       response.json({
         connected: true,
         enabled: cachedStatus.enabled,
-        running: cachedStatus.stepCode >= 4 && cachedStatus.stepCode !== 65535,
+        running: cachedStatus.stepCode >= 1 && cachedStatus.stepCode !== 65535,
         currentJob: cachedStatus.currentProgram,
         currentStep: cachedStatus.stepCode,
         resultCode: cachedStatus.resultCode,
@@ -565,7 +591,10 @@ app.get('/api/status', async (request, response) => {
       currentJob: null,
       currentStep: null,
       resultCode: 'UNKNOWN',
-      errorCode: error.message
+      errorCode: error.message,
+      errorText: error && error.cause && error.cause.message
+        ? error.cause.message
+        : error.message
     });
   }
 });

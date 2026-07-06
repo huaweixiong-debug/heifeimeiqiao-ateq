@@ -36,7 +36,7 @@ function sleep(ms) {
 
 function isAteqActiveStep(stepCode) {
   const numericStepCode = Number(stepCode);
-  return Number.isFinite(numericStepCode) && numericStepCode >= 2 && numericStepCode <= 100;
+  return Number.isFinite(numericStepCode) && numericStepCode >= 1 && numericStepCode <= 100;
 }
 
 class TestWorkflowError extends Error {
@@ -116,7 +116,7 @@ class TestWorkflowService {
       }
     }
 
-    console.log('[workflow] released stale armed context while waiting for step 2');
+    console.log('[workflow] released stale armed context while waiting for step 1');
     this.pendingContext = null;
     return true;
   }
@@ -130,7 +130,7 @@ class TestWorkflowService {
       return {
         running: false,
         stage: this.pendingContext.armed ? 'armed' : 'ready',
-        message: this.pendingContext.armed ? 'Waiting for ATEQ step 2' : 'Ready to start',
+        message: this.pendingContext.armed ? 'Waiting for ATEQ step 1' : 'Ready to start',
         startedAt: null,
         finishedAt: null,
         startMode: this.pendingContext.startMode,
@@ -230,7 +230,7 @@ class TestWorkflowService {
     }
     await this.releaseStaleArmedContextIfSafe();
     if (this.hasArmedPendingContext() || this.commandInFlight) {
-      throw new TestWorkflowError('Cannot change context while waiting for step 2', 409);
+      throw new TestWorkflowError('Cannot change context while waiting for step 1', 409);
     }
 
     const context = await this.buildContext(payload, false);
@@ -271,7 +271,7 @@ class TestWorkflowService {
     }
     await this.releaseStaleArmedContextIfSafe();
     if (this.commandInFlight || this.hasArmedPendingContext()) {
-      throw new TestWorkflowError('Start command already sent, waiting for step 2', 409);
+      throw new TestWorkflowError('Start command already sent, waiting for step 1', 409);
     }
 
     let context;
@@ -313,7 +313,7 @@ class TestWorkflowService {
 
     return {
       success: true,
-      message: 'Start command sent, waiting for step 2',
+      message: 'Start command sent, waiting for step 1',
       resultCode: 'UNKNOWN',
       errorCode: null
     };
@@ -328,9 +328,9 @@ class TestWorkflowService {
     }
 
     const stepCode = Number(telemetry.stepCode);
-    const enteredStep2 = stepCode === 2 && Number(previousStepCode) !== 2;
-    const recoveredActiveStep = !enteredStep2 && !this.activeRun && isAteqActiveStep(stepCode);
-    if (!enteredStep2 && !recoveredActiveStep) {
+    const enteredStep1 = stepCode === 1 && Number(previousStepCode) !== 1;
+    const recoveredActiveStep = !enteredStep1 && !this.activeRun && isAteqActiveStep(stepCode);
+    if (!enteredStep1 && !recoveredActiveStep) {
       return null;
     }
 
@@ -428,7 +428,7 @@ class TestWorkflowService {
   async monitorRun(productProfile, operator, qrCode, recordQrCode, scannerEventId, startMode, initialTelemetry) {
     const state = this.activeRun.state;
     const samples = [];
-    const step6Samples = [];
+    const step4Samples = [];
     let lastTelemetry = null;
     let testStarted = false;
     let testPressure = null;
@@ -472,33 +472,36 @@ class TestWorkflowService {
       rawStatusWord = telemetry.statusWord;
       lastTelemetry = telemetry;
 
-      if (telemetry.stepCode >= 2 && telemetry.stepCode <= 100) {
+      if (telemetry.stepCode >= 1 && telemetry.stepCode <= 100) {
         testStarted = true;
       }
 
-      if (telemetry.stepCode === 5) {
+      if (telemetry.stepCode === 3) {
         testPressure = telemetry.pressure;
       }
 
-      if (telemetry.stepCode === 6) {
-        step6Samples.push(sample);
-        while (step6Samples.length && sample.elapsedMs - step6Samples[0].elapsedMs > 1000) {
-          step6Samples.shift();
+      if (telemetry.stepCode === 4) {
+        step4Samples.push(sample);
+        while (step4Samples.length && sample.elapsedMs - step4Samples[0].elapsedMs > 1000) {
+          step4Samples.shift();
         }
         finalPressureUnit = sample.pressureUnit || finalPressureUnit;
       }
 
-      if (previousStepCode === 6 && telemetry.stepCode !== 6 && step6Samples.length) {
-        finalPressure = step6Samples[step6Samples.length - 1].pressure;
-        finalPressureUnit = step6Samples[step6Samples.length - 1].pressureUnit || finalPressureUnit;
+      if (previousStepCode === 4 && telemetry.stepCode !== 4 && step4Samples.length) {
+        finalPressure = step4Samples[step4Samples.length - 1].pressure;
+        finalPressureUnit = step4Samples[step4Samples.length - 1].pressureUnit || finalPressureUnit;
       }
 
       if (testStarted && telemetry.stepCode === 65535) {
         finalLeak = telemetry.leak;
         finalLeakUnit = telemetry.leakUnit || finalLeakUnit;
-        if (step6Samples.length) {
-          finalPressure = step6Samples[step6Samples.length - 1].pressure;
-          finalPressureUnit = step6Samples[step6Samples.length - 1].pressureUnit || finalPressureUnit;
+        if (step4Samples.length) {
+          finalPressure = step4Samples[step4Samples.length - 1].pressure;
+          finalPressureUnit = step4Samples[step4Samples.length - 1].pressureUnit || finalPressureUnit;
+        } else if (Number.isFinite(Number(telemetry.pressure))) {
+          finalPressure = telemetry.pressure;
+          finalPressureUnit = telemetry.pressureUnit || finalPressureUnit;
         }
         finalResultCode = telemetry.resultCode;
         finalErrorCode = telemetry.errorCode;
@@ -507,9 +510,12 @@ class TestWorkflowService {
       }
 
       if (testStarted && telemetry.stepCode === 0 && previousStepCode !== null) {
-        if (step6Samples.length) {
-          finalPressure = step6Samples[step6Samples.length - 1].pressure;
-          finalPressureUnit = step6Samples[step6Samples.length - 1].pressureUnit || finalPressureUnit;
+        if (step4Samples.length) {
+          finalPressure = step4Samples[step4Samples.length - 1].pressure;
+          finalPressureUnit = step4Samples[step4Samples.length - 1].pressureUnit || finalPressureUnit;
+        } else if (Number.isFinite(Number(telemetry.pressure))) {
+          finalPressure = telemetry.pressure;
+          finalPressureUnit = telemetry.pressureUnit || finalPressureUnit;
         }
         finalLeak = finalLeak !== null ? finalLeak : telemetry.leak;
         finalLeakUnit = finalLeakUnit || telemetry.leakUnit;
@@ -555,16 +561,24 @@ class TestWorkflowService {
       }
 
       if (!testStarted) {
-        throw new TestWorkflowError('ATEQ test did not enter execution steps', 504);
+        throw new TestWorkflowError('ATEQ test did not reach step 1', 504);
       }
 
       if (!lastTelemetry) {
         throw new TestWorkflowError('ATEQ returned no telemetry', 504);
       }
 
-      if (finalPressure === null && step6Samples.length) {
-        finalPressure = step6Samples[step6Samples.length - 1].pressure;
-        finalPressureUnit = step6Samples[step6Samples.length - 1].pressureUnit || finalPressureUnit;
+      if (finalPressure === null && step4Samples.length) {
+        finalPressure = step4Samples[step4Samples.length - 1].pressure;
+        finalPressureUnit = step4Samples[step4Samples.length - 1].pressureUnit || finalPressureUnit;
+      } else if (
+        finalPressure === null &&
+        lastTelemetry &&
+        (lastTelemetry.stepCode === 65535 || lastTelemetry.stepCode === 0) &&
+        Number.isFinite(Number(lastTelemetry.pressure))
+      ) {
+        finalPressure = lastTelemetry.pressure;
+        finalPressureUnit = lastTelemetry.pressureUnit || finalPressureUnit;
       }
 
       if (finalLeak === null) {

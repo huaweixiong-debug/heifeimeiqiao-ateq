@@ -291,7 +291,6 @@
           <a class="title-link" href="/query.html">数据查询</a>
           <a class="title-link" href="/settings.html">系统设置</a>
           <a class="title-link active" href="/comm-config.html">通讯配置</a>
-          <a class="title-link" href="/plc-test.html">设备监控</a>
         </div>
       </div>
     </header>
@@ -301,13 +300,15 @@
         <div class="section-head">
           <div>
             <h2>仪器</h2>
-            <div class="section-meta">当前现场参数建议：COM7 / 9600 / 8E1 / Slave ID 255</div>
+            <div class="section-meta">当前现场参数建议：COM4 / 9600 / 8E1 / Slave ID 1</div>
           </div>
           <div class="status-chip offline" id="ateq-state-chip">
             <span class="dot"></span>
             <span id="ateq-state-text">离线</span>
           </div>
         </div>
+        <div class="section-meta" id="ateq-state-reason" style="margin-top:8px">状态原因：待刷新</div>
+        <div class="section-meta" id="serial-ports-summary" style="margin-top:4px">检测串口：待刷新</div>
 
         <div class="form-grid">
           <div class="field">
@@ -363,6 +364,7 @@
 
         <div class="toolbar">
           <button class="btn secondary" id="btn-fill-ateq" type="button">填入现场值</button>
+          <button class="btn secondary" id="btn-refresh-ports" type="button">刷新串口</button>
           <button class="btn primary" id="btn-save-ateq" type="button">保存配置</button>
         </div>
 
@@ -452,7 +454,7 @@
         </div>
       </section>
 
-      <section class="panel section">
+      <section class="panel section" style="display:none" aria-hidden="true">
         <div class="section-head">
           <div>
             <h2>PLC Modbus TCP</h2>
@@ -510,8 +512,8 @@
 
   const defaults = {
     ateq: {
-      comPort: 'COM7',
-      slaveId: 255,
+      comPort: 'COM4',
+      slaveId: 1,
       baudrate: 9600,
       dataBits: 8,
       parity: 'even',
@@ -521,7 +523,7 @@
       enabled: true
     },
     scanner: {
-      comPort: 'COM1',
+      comPort: 'COM3',
       baudrate: 115200,
       dataBits: 8,
       parity: 'none',
@@ -547,6 +549,7 @@
     scannerFails: 0, scannerLastOk: 0, scannerLastState: false,
     plcFails: 0, plcLastOk: 0, plcLastState: false
   };
+  var detectedSerialPorts = [];
 
   const dom = {
     ateqCom: document.getElementById('ateq-com'),
@@ -559,6 +562,8 @@
     ateqPoll: document.getElementById('ateq-poll'),
     ateqChip: document.getElementById('ateq-state-chip'),
     ateqText: document.getElementById('ateq-state-text'),
+    ateqReason: document.getElementById('ateq-state-reason'),
+    serialPortsSummary: document.getElementById('serial-ports-summary'),
     scannerCom: document.getElementById('scanner-com'),
     scannerBaud: document.getElementById('scanner-baud'),
     scannerData: document.getElementById('scanner-data'),
@@ -577,6 +582,7 @@
     plcChip: document.getElementById('plc-state-chip'),
     plcText: document.getElementById('plc-state-text'),
     btnFillAteq: document.getElementById('btn-fill-ateq'),
+    btnRefreshPorts: document.getElementById('btn-refresh-ports'),
     btnSaveAteq: document.getElementById('btn-save-ateq'),
     btnFillScanner: document.getElementById('btn-fill-scanner'),
     btnSaveScanner: document.getElementById('btn-save-scanner'),
@@ -647,6 +653,70 @@
     textEl.textContent = connected ? '在线' : '离线';
   }
 
+  function setAteqReason(text, offline) {
+    if (!dom.ateqReason) {
+      return;
+    }
+    dom.ateqReason.textContent = `状态原因：${text || '待刷新'}`;
+    dom.ateqReason.style.color = offline ? 'var(--bad)' : 'var(--muted)';
+  }
+
+  function normalizePortName(value) {
+    return String(value || '').trim().toUpperCase();
+  }
+
+  function getDetectedPortNames() {
+    return detectedSerialPorts
+      .map((item) => normalizePortName(item && item.path))
+      .filter(Boolean);
+  }
+
+  function renderSerialPortsSummary(errorText) {
+    if (!dom.serialPortsSummary) {
+      return;
+    }
+
+    if (errorText) {
+      dom.serialPortsSummary.textContent = `检测串口：读取失败 / ${errorText}`;
+      dom.serialPortsSummary.style.color = 'var(--bad)';
+      return;
+    }
+
+    var detectedNames = getDetectedPortNames();
+    var ateqPort = normalizePortName(dom.ateqCom && dom.ateqCom.value);
+    var scannerPort = normalizePortName(dom.scannerCom && dom.scannerCom.value);
+    var issues = [];
+
+    if (ateqPort && !detectedNames.includes(ateqPort)) {
+      issues.push(`ATEQ 未检测到 ${ateqPort}`);
+    }
+    if (scannerPort && !detectedNames.includes(scannerPort)) {
+      issues.push(`扫码枪未检测到 ${scannerPort}`);
+    }
+
+    var summaryText = detectedNames.length ? detectedNames.join(', ') : '未检测到任何串口';
+    if (issues.length) {
+      summaryText += ` / ${issues.join(' / ')}`;
+    }
+
+    dom.serialPortsSummary.textContent = `检测串口：${summaryText}`;
+    dom.serialPortsSummary.style.color = issues.length ? 'var(--bad)' : 'var(--muted)';
+  }
+
+  async function refreshSerialPorts(showToastOnError) {
+    try {
+      const response = await api('/api/system/serial-ports');
+      detectedSerialPorts = Array.isArray(response.ports) ? response.ports : [];
+      renderSerialPortsSummary('');
+    } catch (error) {
+      detectedSerialPorts = [];
+      renderSerialPortsSummary(error.message || '未知错误');
+      if (showToastOnError) {
+        showToast('err', `刷新串口失败：${error.message}`);
+      }
+    }
+  }
+
   function buildAteqPayload() {
     return {
       comPort: String(dom.ateqCom.value || '').trim().toUpperCase(),
@@ -695,15 +765,14 @@
   }
 
   async function loadConfigs() {
-    const [ateqResponse, scannerResponse, plcResponse] = await Promise.all([
+    const [ateqResponse, scannerResponse] = await Promise.all([
       api('/api/config/ateq'),
-      api('/api/config/scanner'),
-      api('/api/config/plc')
+      api('/api/config/scanner')
     ]);
 
     applyAteqConfig(ateqResponse.config);
     applyScannerConfig(scannerResponse.config);
-    applyPlcConfig(plcResponse.config);
+    renderSerialPortsSummary('');
   }
 
   function toleranceCheck(target, connectedNow) {
@@ -725,24 +794,39 @@
 
   async function pollStates() {
     try {
-      const [statusResponse, scannerResponse, plcResponse] = await Promise.allSettled([
+      const [statusResponse, scannerResponse] = await Promise.allSettled([
         api('/api/status'),
-        api('/api/scanner/latest'),
-        api('/api/plc/status')
+        api('/api/scanner/latest')
       ]);
 
       var ateqOk = statusResponse.status === 'fulfilled' && Boolean(statusResponse.value.connected);
       var ateqOnline = toleranceCheck('ateq', ateqOk);
       setChip(dom.ateqChip, dom.ateqText, ateqOnline);
+      if (statusResponse.status === 'fulfilled') {
+        var statusValue = statusResponse.value || {};
+        var detectedNames = getDetectedPortNames();
+        var configuredAteqPort = normalizePortName(dom.ateqCom && dom.ateqCom.value);
+        var configuredAteqMissing = configuredAteqPort && !detectedNames.includes(configuredAteqPort);
+        var reasonText = ateqOnline
+          ? `实时状态读取正常 / STEP ${statusValue.currentStep != null ? statusValue.currentStep : '-'}`
+          : (statusValue.errorText || statusValue.errorCode || '实时状态读取失败');
+        if (!ateqOnline && configuredAteqMissing) {
+          reasonText += ` / 本机未检测到 ${configuredAteqPort}`;
+        }
+        setAteqReason(reasonText, !ateqOnline);
+      } else {
+        setAteqReason(
+          statusResponse.reason && statusResponse.reason.message
+            ? statusResponse.reason.message
+            : '读取 /api/status 失败',
+          true
+        );
+      }
 
       var scannerOk = scannerResponse.status === 'fulfilled' && Boolean(scannerResponse.value.connected);
       var scannerOnline = toleranceCheck('scanner', scannerOk);
       setChip(dom.scannerChip, dom.scannerText, scannerOnline);
 
-      var plcData = plcResponse.status === 'fulfilled' && plcResponse.value && plcResponse.value.data ? plcResponse.value.data : null;
-      var plcOk = plcData && plcData.enabled && plcData.coordinatorRunning && (plcData.online || plcData.stale);
-      var plcOnline = toleranceCheck('plc', plcOk);
-      setChip(dom.plcChip, dom.plcText, plcOnline);
     } catch (error) {
       // Individual tolerance checks handle transient failures
     }
@@ -758,6 +842,13 @@
       });
       applyAteqConfig(response.config);
       setChip(dom.ateqChip, dom.ateqText, response.state && response.state.connected);
+      renderSerialPortsSummary('');
+      setAteqReason(
+        response.state && response.state.connected
+          ? '串口已打开，等待实时状态刷新'
+          : '串口连接失败',
+        !(response.state && response.state.connected)
+      );
       showToast('ok', '通讯配置已保存。');
     } catch (error) {
       showToast('err', `保存配置失败：${error.message}`);
@@ -776,6 +867,7 @@
       });
       applyScannerConfig(response.config);
       setChip(dom.scannerChip, dom.scannerText, response.state && response.state.connected);
+      renderSerialPortsSummary('');
       showToast('ok', '扫码枪通讯配置已保存。');
     } catch (error) {
       showToast('err', `保存扫码枪配置失败：${error.message}`);
@@ -786,10 +878,16 @@
 
   dom.btnFillAteq.addEventListener('click', () => {
     applyAteqConfig(defaults.ateq);
+    renderSerialPortsSummary('');
   });
 
   dom.btnFillScanner.addEventListener('click', () => {
     applyScannerConfig(defaults.scanner);
+    renderSerialPortsSummary('');
+  });
+
+  dom.btnRefreshPorts.addEventListener('click', () => {
+    refreshSerialPorts(true);
   });
 
   dom.btnFillPlc.addEventListener('click', () => {
@@ -821,6 +919,7 @@
   async function init() {
     try {
       await loadConfigs();
+      await refreshSerialPorts(false);
       await pollStates();
       window.setInterval(pollStates, 3000);
     } catch (error) {

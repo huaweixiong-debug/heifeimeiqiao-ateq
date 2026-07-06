@@ -61,16 +61,20 @@
   }
 
   .header{
-    padding:14px 16px;
+    padding:10px 16px 8px;
     display:grid;
     grid-template-columns:minmax(260px,1fr) auto;
-    align-items:end;
-    gap:16px;
-    min-height:74px;
+    align-items:center;
+    gap:14px;
+    min-height:78px;
   }
 
   .title-block{
     min-width:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    gap:4px;
   }
 
   .title-block h1{
@@ -90,8 +94,8 @@
 
   .title-links{
     display:flex;
-    gap:10px;
-    margin-top:6px;
+    gap:8px;
+    margin-top:0;
     flex-wrap:wrap;
   }
 
@@ -115,13 +119,28 @@
   .header-toolbar{
     min-width:0;
     display:flex;
-    justify-content:flex-end;
+    flex-direction:column;
     align-items:flex-end;
-    gap:12px;
-    flex-wrap:nowrap;
+    justify-content:center;
+    gap:4px;
   }
 
-  .header-toolbar > *{
+  .header-toolbar-row{
+    min-width:0;
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+
+  .header-toolbar-row::-webkit-scrollbar{
+    display:none;
+  }
+
+  .header-toolbar-row > *{
     flex:0 0 auto;
   }
 
@@ -129,12 +148,14 @@
     min-width:0;
     display:flex;
     flex-direction:column;
+    justify-content:center;
   }
 
   .control-label{
     display:block;
-    margin:0 0 6px;
+    margin:0 0 4px;
     font-size:11px;
+    line-height:1.1;
     color:var(--muted);
     letter-spacing:.3px;
   }
@@ -182,6 +203,22 @@
     min-width:152px;
   }
 
+  .status-detail{
+    min-height:0;
+    max-width:100%;
+    font-size:11px;
+    line-height:1.15;
+    color:var(--muted);
+    text-align:right;
+    width:auto;
+    align-self:flex-end;
+    white-space:normal;
+  }
+
+  .status-detail.offline{
+    color:var(--bad);
+  }
+
   .badge-online .dot{
     width:10px;
     height:10px;
@@ -198,20 +235,24 @@
     box-shadow:0 0 10px rgba(255,90,90,.6);
   }
 
-  @media (max-width: 1200px){
+  @media (max-width: 1360px){
     .header{
       grid-template-columns:minmax(240px,1fr);
-      align-items:start;
+      align-items:center;
     }
 
     .header-toolbar{
       justify-content:flex-start;
-      flex-wrap:wrap;
+      align-items:flex-start;
     }
 
-    .status-cluster{
-      flex-basis:100%;
+    .header-toolbar-row{
       justify-content:flex-start;
+    }
+
+    .status-detail{
+      align-self:flex-start;
+      text-align:left;
     }
   }
   .main{
@@ -438,15 +479,16 @@
 
   .flow-step{
     min-width:0;
-    min-height:100px;
-    padding:8px 6px;
+    min-height:108px;
+    padding:10px 8px;
     border-radius:18px;
     border:1px solid rgba(41,80,111,.55);
     background:rgba(7,17,27,.48);
     display:flex;
     flex-direction:column;
     align-items:center;
-    justify-content:space-between;
+    justify-content:flex-start;
+    gap:6px;
     text-align:center;
     transition:all .18s ease;
   }
@@ -468,6 +510,7 @@
   .flow-name{
     font-size:12px;
     font-weight:800;
+    line-height:1.25;
   }
 
   .flow-time{
@@ -475,11 +518,14 @@
     font-weight:700;
     color:#d7f4ff;
     font-family:Consolas,"SFMono-Regular",monospace;
+    min-height:14px;
+    line-height:1.2;
   }
 
   .flow-note{
     font-size:10px;
     color:var(--muted);
+    line-height:1.3;
     letter-spacing:.2px;
   }
 
@@ -785,9 +831,17 @@
     }
 
     .header{
-      padding:12px 14px;
-      min-height:68px;
-      gap:10px;
+      padding:8px 14px 7px;
+      min-height:62px;
+      gap:8px;
+    }
+
+    .header-toolbar{
+      gap:3px;
+    }
+
+    .header-toolbar-row{
+      gap:8px;
     }
 
     .title-block h1{
@@ -801,9 +855,18 @@
       font-size:11px;
     }
 
+    .control-label{
+      margin-bottom:3px;
+    }
+
     .control-select,
     .badge{
       height:34px;
+    }
+
+    .status-detail{
+      font-size:10.5px;
+      line-height:1.05;
     }
 
     .main,
@@ -913,12 +976,12 @@
           <a class="title-link" href="/query.html">数据查询</a>
           <a class="title-link" href="/settings.html">系统设置</a>
           <a class="title-link" href="/comm-config.html">通讯配置</a>
-          <a class="title-link" href="/plc-test.html">设备监控</a>
 		  <a class="title-link active" href="/index.html">泄漏测试</a>
         </div>
       </div>
 
       <div class="header-toolbar">
+        <div class="header-toolbar-row">
         <div class="control-group">
           <label class="control-label" for="sel-product">产品型号</label>
           <select class="control-select" id="sel-product">
@@ -936,16 +999,13 @@
         <div class="badge badge-program" id="program-badge">程序 -</div>
 
         <div class="status-cluster">
-          <div class="badge badge-offline" id="plc-badge">
-            <span class="dot"></span>
-            <span id="plc-badge-text">PLC OFFLINE</span>
-          </div>
-
           <div class="badge badge-offline" id="ateq-badge">
             <span class="dot"></span>
             <span id="ateq-badge-text">检漏仪 OFFLINE</span>
           </div>
         </div>
+        </div>
+        <div class="status-detail" id="ateq-comm-reason">检漏仪通讯状态待刷新</div>
       </div>
     </header>
 
@@ -1006,37 +1066,34 @@
           </div>
 
           <div class="flow-row" id="flow-row">
+            <div class="flow-step future" data-flow-step="1">
+              <div class="flow-index">1</div>
+              <div class="flow-name">FILL</div>
+              <div class="flow-time"></div>
+              <div class="flow-note">STEP 1</div>
+            </div>
             <div class="flow-step future" data-flow-step="2">
               <div class="flow-index">2</div>
-              <div class="flow-name">捡大漏充气</div>
-              <div class="flow-time">--</div>
+              <div class="flow-name">ZERO DIFF.</div>
+              <div class="flow-time"></div>
               <div class="flow-note">STEP 2</div>
             </div>
             <div class="flow-step future" data-flow-step="3">
               <div class="flow-index">3</div>
-              <div class="flow-name">检大漏测试</div>
-              <div class="flow-time">--</div>
+              <div class="flow-name">STABIL.</div>
+              <div class="flow-time"></div>
               <div class="flow-note">STEP 3</div>
             </div>
             <div class="flow-step future" data-flow-step="4">
               <div class="flow-index">4</div>
-              <div class="flow-name">充气</div>
+              <div class="flow-name">TEST</div>
               <div class="flow-time" id="flow-fill-time">--.-s</div>
               <div class="flow-note">STEP 4</div>
-            </div>
-            <div class="flow-step future" data-flow-step="5">
-              <div class="flow-index">5</div>
-              <div class="flow-name">稳压</div>
-              <div class="flow-note">STEP 5</div>
-            </div>
-            <div class="flow-step future" data-flow-step="6">
-              <div class="flow-index">6</div>
-              <div class="flow-name">测试</div>
-              <div class="flow-note">STEP 6-7</div>
             </div>
             <div class="flow-step future" data-flow-step="65535">
               <div class="flow-index">END</div>
               <div class="flow-name">结束</div>
+              <div class="flow-time"></div>
               <div class="flow-note">STEP 65535</div>
             </div>
           </div>
@@ -1130,8 +1187,7 @@
     programBadge: document.getElementById('program-badge'),
     ateqBadge: document.getElementById('ateq-badge'),
     ateqBadgeText: document.getElementById('ateq-badge-text'),
-    plcBadge: document.getElementById('plc-badge'),
-    plcBadgeText: document.getElementById('plc-badge-text'),
+    ateqCommReason: document.getElementById('ateq-comm-reason'),
     scanStatusText: document.getElementById('scan-status-text'),
     scanValue: document.getElementById('scan-value'),
     scanMatchText: document.getElementById('scan-match-text'),
@@ -1159,7 +1215,7 @@
     errorToast: document.getElementById('error-toast')
   };
 
-  const FLOW_ORDER = [2, 3, 4, 5, 6, 65535];
+  const FLOW_ORDER = [1, 2, 3, 4, 65535];
 
   const SCANNER_POLL_MS = 200;
   const TOLERANCE_MAX_FAILS = 3;
@@ -1172,8 +1228,6 @@
     scannerConnected: false,
     ateqConsecutiveFails: 0,
     ateqLastSuccess: 0,
-    plcConsecutiveFails: 0,
-    plcLastSuccess: 0,
     currentProgram: null,
     currentStep: null,
     resultCode: 'UNKNOWN',
@@ -1295,6 +1349,38 @@
       : finalLeak;
   }
 
+  function deriveFinalPressureFromSamples(samples) {
+    if (!Array.isArray(samples) || !samples.length) {
+      return null;
+    }
+
+    const step4Samples = samples.filter((sample) => sample && sample.stepCode === 4 && Number.isFinite(Number(sample.pressure)));
+    if (step4Samples.length) {
+      const lastStep4Sample = step4Samples[step4Samples.length - 1];
+      const lastStep4Time = Number(lastStep4Sample.elapsedMs || 0);
+      const trailingWindow = step4Samples.filter((sample) => lastStep4Time - Number(sample.elapsedMs || 0) <= 1000);
+      const finalPressureSample = trailingWindow[trailingWindow.length - 1] || lastStep4Sample;
+      return {
+        value: Number(finalPressureSample.pressure),
+        unit: finalPressureSample.pressureUnit || null
+      };
+    }
+
+    const fallbackSample = [...samples].reverse().find((sample) => (
+      sample &&
+      (sample.stepCode === 65535 || sample.stepCode === 0) &&
+      Number.isFinite(Number(sample.pressure))
+    ));
+    if (fallbackSample) {
+      return {
+        value: Number(fallbackSample.pressure),
+        unit: fallbackSample.pressureUnit || null
+      };
+    }
+
+    return null;
+  }
+
   function isFinalLeakNaMarker(finalPressure, finalLeak) {
     return isZeroOrMissingMetricValue(finalPressure)
       && (isZeroMetricValue(finalLeak) || Number(finalLeak) === 9999);
@@ -1323,11 +1409,10 @@
   }
 
   function mapFlowStep(stepCode) {
+    if (stepCode === 1) return 1;
     if (stepCode === 2) return 2;
     if (stepCode === 3) return 3;
     if (stepCode === 4) return 4;
-    if (stepCode === 5) return 5;
-    if (stepCode === 6 || stepCode === 7) return 6;
     if (stepCode === 65535) return 65535;
     return null;
   }
@@ -1346,6 +1431,29 @@
       : '检漏仪 OFFLINE';
     dom.btnStart.disabled = !state.connected || isStartLocked();
     dom.btnReset.disabled = !state.connected;
+  }
+
+  function renderAteqCommReason() {
+    if (!dom.ateqCommReason) {
+      return;
+    }
+
+    let text = '检漏仪通讯状态待刷新';
+    if (!state.connected) {
+      text = `检漏仪通讯：${state.errorText || state.errorCode || '实时状态读取失败'}`;
+    } else {
+      const parts = ['检漏仪通讯正常'];
+      if (Number.isInteger(Number(state.currentProgram))) {
+        parts.push(`程序 ${Number(state.currentProgram)}`);
+      }
+      if (state.currentStep !== null && state.currentStep !== undefined) {
+        parts.push(`STEP ${state.currentStep}`);
+      }
+      text = `检漏仪通讯：${parts.join(' / ')}`;
+    }
+
+    dom.ateqCommReason.textContent = text;
+    dom.ateqCommReason.classList.toggle('offline', !state.connected);
   }
 
 function renderProgramBadge() {
@@ -1659,14 +1767,17 @@ function renderProgramBadge() {
         }
       }
 
-      if (flowStep === '4') {
+      if (flowStep === '1') {
         timeNode.id = 'flow-fill-time';
-      } else if (flowStep === '5') {
+      } else if (flowStep === '3') {
         timeNode.id = 'flow-stab-time';
-      } else if (flowStep === '6') {
+      } else if (flowStep === '4') {
         timeNode.id = 'flow-test-time';
       } else if (flowStep === '65535') {
         timeNode.id = 'flow-end-time';
+      } else {
+        timeNode.removeAttribute('id');
+        timeNode.textContent = '';
       }
     });
   }
@@ -1678,9 +1789,9 @@ function renderProgramBadge() {
       document.getElementById(id)
       || dom.flowSteps.find((element) => element.getAttribute('data-flow-step') === String(step))?.querySelector('.flow-time')
     );
-    const fillTimeNode = getFlowTimeNode(4, 'flow-fill-time');
-    const stabTimeNode = getFlowTimeNode(5, 'flow-stab-time');
-    const testTimeNode = getFlowTimeNode(6, 'flow-test-time');
+    const fillTimeNode = getFlowTimeNode(1, 'flow-fill-time');
+    const stabTimeNode = getFlowTimeNode(3, 'flow-stab-time');
+    const testTimeNode = getFlowTimeNode(4, 'flow-test-time');
     const endTimeNode = getFlowTimeNode(65535, 'flow-end-time');
 
     if (fillTimeNode) {
@@ -1767,7 +1878,7 @@ function renderProgramBadge() {
       note = '测试进行中';
     } else if (active && active.stage === 'armed') {
       resultCode = 'WAIT';
-      note = '等待进入步骤 2';
+      note = '等待进入步骤 4';
     } else if (active && active.stage === 'ready') {
       note = '已就绪，可启动测试';
     } else if (active && active.stage === 'failed') {
@@ -2098,14 +2209,20 @@ function renderProgramBadge() {
       return;
     }
 
-    state.finalPressure = hasFiniteMetricValue(savedRecord.finalPressure)
-      ? Number(savedRecord.finalPressure)
+    const derivedFinalPressure = hasFiniteMetricValue(savedRecord.finalPressure)
+      ? {
+          value: Number(savedRecord.finalPressure),
+          unit: savedRecord.pressureUnit || null
+        }
+      : deriveFinalPressureFromSamples(savedRecord.samples);
+    state.finalPressure = derivedFinalPressure && hasFiniteMetricValue(derivedFinalPressure.value)
+      ? Number(derivedFinalPressure.value)
       : state.finalPressure;
     const normalizedFinalLeak = normalizeFinalLeakForDisplay(savedRecord.finalPressure, savedRecord.finalLeak);
     state.finalLeak = hasFiniteMetricValue(normalizedFinalLeak)
       ? Number(normalizedFinalLeak)
       : state.finalLeak;
-    state.finalPressureUnit = savedRecord.pressureUnit || state.finalPressureUnit || state.pressureUnit;
+    state.finalPressureUnit = (derivedFinalPressure && derivedFinalPressure.unit) || savedRecord.pressureUnit || state.finalPressureUnit || state.pressureUnit;
     state.finalLeakUnit = savedRecord.leakUnit || state.finalLeakUnit || state.leakUnit;
   }
 
@@ -2114,14 +2231,10 @@ function renderProgramBadge() {
       return;
     }
 
-    const step6Samples = samples.filter((sample) => sample && sample.stepCode === 6 && Number.isFinite(Number(sample.pressure)));
-    if (step6Samples.length) {
-      const lastStep6Sample = step6Samples[step6Samples.length - 1];
-      const lastStep6Time = Number(lastStep6Sample.elapsedMs || 0);
-      const trailingWindow = step6Samples.filter((sample) => lastStep6Time - Number(sample.elapsedMs || 0) <= 1000);
-      const finalPressureSample = trailingWindow[trailingWindow.length - 1] || lastStep6Sample;
-      state.finalPressure = Number(finalPressureSample.pressure);
-      state.finalPressureUnit = finalPressureSample.pressureUnit || state.finalPressureUnit || state.pressureUnit;
+    const derivedFinalPressure = deriveFinalPressureFromSamples(samples);
+    if (derivedFinalPressure) {
+      state.finalPressure = Number(derivedFinalPressure.value);
+      state.finalPressureUnit = derivedFinalPressure.unit || state.finalPressureUnit || state.pressureUnit;
     }
 
     const finalLeakSample = [...samples].reverse().find((sample) => sample && sample.stepCode === 65535 && Number.isFinite(Number(sample.leak)));
@@ -2135,7 +2248,13 @@ function renderProgramBadge() {
     const safeRecords = Array.isArray(records) ? records.slice(0, 20) : [];
     dom.recordsMeta.textContent = `最近 ${safeRecords.length} 条记录`;
     dom.recordsBody.innerHTML = safeRecords.map((record) => {
-      const pressureValue = hasFiniteMetricValue(record.finalPressure) ? record.finalPressure : record.testPressure;
+      const derivedFinalPressure = hasFiniteMetricValue(record.finalPressure)
+        ? { value: record.finalPressure, unit: record.pressureUnit || null }
+        : deriveFinalPressureFromSamples(record.samples);
+      const pressureValue = derivedFinalPressure && hasFiniteMetricValue(derivedFinalPressure.value)
+        ? derivedFinalPressure.value
+        : record.testPressure;
+      const pressureUnit = (derivedFinalPressure && derivedFinalPressure.unit) || record.pressureUnit || '';
       const leakValue = normalizeFinalLeakForDisplay(record.finalPressure, record.finalLeak);
       const resultClass = record.resultCode === 'OK' ? 'ok-text' : record.resultCode === 'NG' ? 'ng-text' : '';
       const resultTitle = record.resultCode === 'NG' && (record.errorText || record.errorCode)
@@ -2147,7 +2266,7 @@ function renderProgramBadge() {
         `<td>${escapeHtml(record.sequenceCode || '-')}</td>`,
         `<td>${escapeHtml(record.productModel || '-')}</td>`,
         `<td class="qr-cell" title="${escapeHtml(record.qrCode || '-')}">${escapeHtml(record.qrCode || '-')}</td>`,
-        `<td>${escapeHtml(formatValueWithUnit(pressureValue, record.pressureUnit || ''))}</td>`,
+        `<td>${escapeHtml(formatValueWithUnit(pressureValue, pressureUnit))}</td>`,
         `<td>${escapeHtml(formatValueWithUnit(leakValue, record.leakUnit || ''))}</td>`,
         `<td class="${resultClass}"${resultTitle}>${escapeHtml(record.resultCode || '-')}</td>`,
         `<td>${escapeHtml(record.operatorName || '-')}</td>`,
@@ -2175,6 +2294,7 @@ function renderProgramBadge() {
   }
 
   function renderAll() {
+    renderAteqCommReason();
     renderProgramBadge();
     renderScan();
     renderMetrics();
@@ -2436,7 +2556,7 @@ function renderProgramBadge() {
         state.currentStep = activeTest.latestTelemetry.stepCode ?? state.currentStep;
         if (!activeTest.savedRecord) {
           var t = activeTest.latestTelemetry;
-          // Pressure: live telemetry is fine — step 4/5 are fill/stabilize with real pressure.
+          // Pressure: live telemetry is fine — steps 1-4 carry the process pressure.
           if (Number.isFinite(Number(t.pressure))) { state.pressure = Number(t.pressure); }
           if (t.pressureUnit) { state.pressureUnit = t.pressureUnit; }
         }
@@ -2448,14 +2568,14 @@ function renderProgramBadge() {
 
       if (samples.length) {
         state.pressureHistory = samples
-          .filter((sample) => sample && Number.isFinite(Number(sample.pressure)) && (sample.stepCode === 4 || sample.stepCode === 5))
+          .filter((sample) => sample && Number.isFinite(Number(sample.pressure)) && (sample.stepCode === 1 || sample.stepCode === 2 || sample.stepCode === 3 || sample.stepCode === 4))
           .map((sample) => ({
             t: Date.parse(sample.sampledAt) || Date.now(),
             v: Number(sample.pressure)
           }));
 
         state.leakHistory = samples
-          .filter((sample) => sample && Number.isFinite(Number(sample.leak)) && (sample.stepCode === 6 || sample.stepCode === 7 || sample.stepCode === 65535))
+          .filter((sample) => sample && Number.isFinite(Number(sample.leak)) && (sample.stepCode === 4 || sample.stepCode === 65535))
           .map((sample) => ({
             t: Date.parse(sample.sampledAt) || Date.now(),
             v: Number(sample.leak)
@@ -2576,7 +2696,7 @@ function renderProgramBadge() {
       state.activeTest = {
         running: false,
         stage: 'armed',
-        message: 'Waiting for step 2',
+        message: 'Waiting for step 1',
         latestTelemetry: null,
         samples: [],
         savedRecord: null
@@ -2620,36 +2740,8 @@ function renderProgramBadge() {
     state.activePoller = window.setInterval(pollActiveTest, 500);
     state.recordsPoller = window.setInterval(pollRecords, 5000);
     state.todayPoller = window.setInterval(pollTodaySummary, 15000);
-    state.plcPoller = window.setInterval(pollPlcStatus, 3000);
-    pollPlcStatus(); // immediate first check
   }
 
-  async function pollPlcStatus() {
-    try {
-      var resp = await api('/api/plc/status');
-      var d = resp && resp.data;
-      var plcOnline = d && d.enabled && d.coordinatorRunning && (d.online || d.stale);
-      state.plcConsecutiveFails = 0;
-      state.plcLastSuccess = Date.now();
-      dom.plcBadge.classList.toggle('badge-online', !!plcOnline);
-      dom.plcBadge.classList.toggle('badge-offline', !plcOnline);
-      dom.plcBadgeText.textContent = plcOnline
-        ? (d.stale ? 'PLC ONLINE (重试中)' : 'PLC ONLINE')
-        : 'PLC OFFLINE';
-      dom.plcBadge.style.opacity = '1';
-    } catch (e) {
-      state.plcConsecutiveFails++;
-      var staleness = Date.now() - state.plcLastSuccess;
-      var shouldFlipOffline = state.plcConsecutiveFails >= TOLERANCE_MAX_FAILS
-        || (state.plcLastSuccess > 0 && staleness > TOLERANCE_STALE_MS);
-      if (shouldFlipOffline) {
-        dom.plcBadge.classList.toggle('badge-online', false);
-        dom.plcBadge.classList.toggle('badge-offline', true);
-        dom.plcBadgeText.textContent = 'PLC OFFLINE';
-      }
-      dom.plcBadge.style.opacity = '1';
-    }
-  }
 
   async function init() {
     try {

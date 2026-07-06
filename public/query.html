@@ -649,7 +649,6 @@
           <a class="title-link active" href="/query.html">数据查询</a>
           <a class="title-link" href="/settings.html">系统设置</a>
           <a class="title-link" href="/comm-config.html">通讯配置</a>
-          <a class="title-link" href="/plc-test.html">设备监控</a>
         </div>
       </div>
       <div class="header-side">
@@ -1391,7 +1390,9 @@
     drawDetailChart(dom.detailLeakChart, samples, 'leak', leakUnit, '#3bcf84');
 
     dom.detailMask.classList.add('open');
-    renderRecords();
+    if (!keepSelection) {
+      renderRecords();
+    }
   }
 
   function closeDetail() {
