@@ -120,6 +120,8 @@ async function initDatabase() {
 }
 
 function ensureColumns() {
+  run('CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)');
+
   try { run('ALTER TABLE product_profiles ADD COLUMN fill_time REAL'); } catch(e) {}
   try { run('ALTER TABLE product_profiles ADD COLUMN stab_time REAL'); } catch(e) {}
   try { run('ALTER TABLE product_profiles ADD COLUMN test_time REAL'); } catch(e) {}
@@ -144,6 +146,7 @@ function createTables() {
     scan_match_enabled INTEGER)`);
   run(`CREATE TABLE IF NOT EXISTS scanner_events (
     id TEXT PRIMARY KEY, raw_text TEXT, scanned_at TEXT)`);
+  run(`CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT)`);
   run(`CREATE TABLE IF NOT EXISTS test_records (
     id TEXT PRIMARY KEY, batch_date TEXT, daily_sequence INTEGER,
     sequence_code TEXT, started_at TEXT, finished_at TEXT,
@@ -480,12 +483,25 @@ async function queryTestRecords(filters) {
   return { total, page: safePage, pageSize: safePageSize, records: paged };
 }
 
+async function getAppMeta(key) {
+  const row = execOne('SELECT value FROM app_meta WHERE key = ?', [key]);
+  return row ? row[0] : null;
+}
+
+async function setAppMeta(key, value) {
+  const now = new Date().toISOString();
+  run('INSERT OR REPLACE INTO app_meta (key, value, updated_at) VALUES (?,?,?)', [key, value, now]);
+  await persist();
+  return value;
+}
+
 module.exports = {
   initDatabase,
   getCommConfig, saveCommConfig,
   listOperators, saveOperators, getOperatorByName,
   listProductProfiles, saveProductProfiles, getProductProfileByModel, getProductProfileByProgramNo, matchProductProfileByQr,
   saveScannerEvent, getLatestScannerEvent, deleteScannerEventById,
-  saveTestRecord, listTestRecords, queryTestRecords
+  saveTestRecord, listTestRecords, queryTestRecords,
+  getAppMeta, setAppMeta
 };
 

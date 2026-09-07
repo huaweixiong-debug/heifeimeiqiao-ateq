@@ -20,6 +20,7 @@ const {
 const { modbusService, ModbusError } = require('./modbusService');
 const { scannerService, ScannerError } = require('./scannerService');
 const { testWorkflowService, TestWorkflowError, MONITOR_SETTINGS } = require('./testWorkflowService');
+const license = require('./license');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -335,6 +336,86 @@ app.use(helmet({
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+/* ================= license gate ================= */
+// 受限模式（试用到期未激活）下仅放行：扫码读取 + 泄漏测试主流程。
+// 记录/查询/导出、设置、通讯配置、调试页等正式版功能一律锁定。
+const LICENSE_OPEN_PREFIXES = [
+  '/api/health',
+  '/api/license',
+  '/api/scanner/latest',
+  '/api/scanner/input',
+  '/api/status',
+  '/api/test/active',
+  '/api/test/context',
+  '/api/program-timings',
+  '/api/start',
+  '/api/reset',
+];
+const LICENSE_OPEN_GET_PREFIXES = [
+  '/api/settings/products',
+  '/api/settings/operators',
+];
+
+app.use('/api', async (request, response, next) => {
+  try {
+    const status = await license.getLicenseStatus();
+    const lic = status.license || {};
+    if (lic.mode === 'full' || lic.mode === 'trial') {
+      return next();
+    }
+    // 到期未激活：受限模式
+    // 注意：app.use('/api', ...) 会剥离 '/api' 前缀，request.path 相对挂载点，
+    // 因此用 baseUrl + path 还原完整路径再判断。
+    const pathName = String((request.baseUrl || '') + (request.path || ''));
+    const method = request.method || 'GET';
+
+    const isOpen =
+      LICENSE_OPEN_PREFIXES.some((p) => pathName === p || pathName.startsWith(p + '/')) ||
+      (method === 'GET' && LICENSE_OPEN_GET_PREFIXES.some((p) => pathName === p || pathName.startsWith(p + '/')));
+
+    // 记录/今日统计接口返回空数据（前端弹窗锁定提示，避免报错刷屏）
+    if (method === 'GET' && (pathName === '/api/tests/latest' || pathName === '/api/tests/query')) {
+      return response.json({ success: true, records: [], total: 0, licenseRestricted: true });
+    }
+
+    if (isOpen) {
+      return next();
+    }
+
+    return response.status(403).json({
+      success: false,
+      error: 'LICENSE_REQUIRED',
+      message: '试用期已结束，正式版功能已锁定。请输入激活码恢复完整功能。',
+    });
+  } catch (error) {
+    return next();
+  }
+});
+
+app.get('/api/license', async (request, response) => {
+  try {
+    const status = await license.getLicenseStatus();
+    return response.json(status);
+  } catch (error) {
+    return response.status(500).json({ success: false, message: '许可证状态读取失败' });
+  }
+});
+
+app.post('/api/license/activate', async (request, response) => {
+  try {
+    const code = String((request.body && request.body.code) || '').trim();
+    const result = await license.activate(code);
+    if (!result.ok) {
+      return response.status(400).json({ success: false, message: result.message });
+    }
+    const status = await license.getLicenseStatus();
+    return response.json({ success: true, message: '激活成功，已恢复正式版全部功能。', license: status.license });
+  } catch (error) {
+    return response.status(500).json({ success: false, message: '激活失败，请稍后重试' });
+  }
+});
+
 
 app.get('/api/health', (request, response) => {
   response.json({
@@ -770,6 +851,7 @@ app.use((error, request, response, next) => {
 async function startServer() {
   try {
     await initDatabase();
+    await license.ensureInstalled();
     app.listen(PORT, () => {
       console.log(`[server] listening on port ${PORT}`);
     });
