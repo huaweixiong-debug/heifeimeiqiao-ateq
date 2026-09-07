@@ -327,6 +327,7 @@ app.use(helmet({
       "style-src": ["'self'", "'unsafe-inline'"],
       "img-src": ["'self'", "data:"],
       "connect-src": ["'self'"],
+      "upgrade-insecure-requests": null
     }
   },
   crossOriginEmbedderPolicy: false
