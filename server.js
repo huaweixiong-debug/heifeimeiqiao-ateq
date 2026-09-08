@@ -258,6 +258,24 @@ function escapeCsvValue(value) {
   return text;
 }
 
+function formatCsvDateTime(value) {
+  if (!value) return '';
+  try {
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    const pad = (n) => String(n).padStart(2, '0');
+    const y = d.getFullYear();
+    const m = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const h = pad(d.getHours());
+    const min = pad(d.getMinutes());
+    const s = pad(d.getSeconds());
+    return `${y}-${m}-${day} ${h}:${min}:${s}`;
+  } catch (e) {
+    return String(value);
+  }
+}
+
 function buildTestsCsv(records) {
   const columns = [
     ['sequenceCode', '序号'],
@@ -278,7 +296,10 @@ function buildTestsCsv(records) {
 
   const header = columns.map(([, label]) => escapeCsvValue(label)).join(',');
   const rows = records.map((record) =>
-    columns.map(([key]) => escapeCsvValue(record[key])).join(',')
+    columns.map(([key]) => {
+      if (key === 'startedAt') return escapeCsvValue(formatCsvDateTime(record[key]));
+      return escapeCsvValue(record[key]);
+    }).join(',')
   );
 
   return [header, ...rows].join('\r\n');

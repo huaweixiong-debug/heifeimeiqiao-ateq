@@ -1600,10 +1600,10 @@ function renderProgramBadge() {
       return '';
     }
 
+    // 去重只看产品型号 + 扫码内容，忽略事件 ID 和时间戳
+    // 否则同一条码的重复扫描每次都会触发新弹窗
     return [
       productProfile.productModel || '',
-      scan.id || '',
-      scan.scannedAt || '',
       scan.rawText || ''
     ].join('|');
   }
@@ -1626,7 +1626,6 @@ function renderProgramBadge() {
 
     state.lastScanAlertKey = nextKey;
     const message = `扫码内容与产品 ${selectedProduct.productModel} 不匹配，要求包含关键词：${selectedProduct.qrKeyword}`;
-    window.alert(message);
     showError(message);
   }
 
@@ -2660,14 +2659,12 @@ function renderProgramBadge() {
       const message = requireScanMatch
         ? `Product ${selectedProduct ? selectedProduct.productModel : '-'} requires a matching scan before start.`
         : `Product ${selectedProduct ? selectedProduct.productModel : '-'} requires a scan record before start.`;
-      window.alert(message);
       showError(message);
       return;
     }
 
     if (requireScanMatch && !doesScanMatchSelectedProduct(selectedProduct)) {
       const message = `Scan does not contain the required keyword: ${selectedProduct && selectedProduct.qrKeyword ? selectedProduct.qrKeyword : '-'}`;
-      window.alert(message);
       showError(message);
       return;
     }
